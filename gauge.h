@@ -34,19 +34,18 @@ struct LinkConfig { // Force=ForceSingleLink
   inline double re(const std::complex<double>& c) const { return reinterpret_cast<const double (&)[2]>(c)[0]; }
   inline double im(const std::complex<double>& c) const { return reinterpret_cast<const double (&)[2]>(c)[1]; }
 
+  const Generators t;
   MC W;
   double theta;
   MC U;
   MC Phi;
 
-  const Generators t;
-
   LinkConfig()
-    : W( id() )
+    : t()
+    , W( id() )
     , theta( 0.0 )
     , U( id() )
     , Phi( id() )
-    , t()
   {
     check_consistency();
   }
@@ -255,8 +254,9 @@ struct LinkConfig { // Force=ForceSingleLink
 
   void decomposition(){
     // Eigen::JacobiSVD<MC> svd;
-    Eigen::BDCSVD<MC> svd;
-    svd.compute(W, Eigen::ComputeFullU | Eigen::ComputeFullV); // U S V^\dagger
+    Eigen::BDCSVD<MC, Eigen::ComputeFullU | Eigen::ComputeFullV> svd;
+    // svd.compute<MC, >(W, Eigen::ComputeFullU | Eigen::ComputeFullV); // U S V^\dagger
+    svd.compute(W); // U S V^\dagger
     {
       const MC check = svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixV().adjoint();
       double norm = (check-W).norm();
@@ -353,19 +353,18 @@ struct LinkConf { // Force=ForceSingleLink
   inline double re(const std::complex<double>& c) const { return reinterpret_cast<const double (&)[2]>(c)[0]; }
   inline double im(const std::complex<double>& c) const { return reinterpret_cast<const double (&)[2]>(c)[1]; }
 
+  const Generators t;
   MC W;
   double theta;
   MC U;
   MC Phi;
 
-  const Generators t;
-
   LinkConf()
-    : W( id() )
+    : t()
+    , W( id() )
     , theta( 0.0 )
     , U( id() )
     , Phi( id() )
-    , t()
   {
     check_consistency();
   }
@@ -499,8 +498,8 @@ struct LinkConf { // Force=ForceSingleLink
 
   void decomposition(){
     // Eigen::JacobiSVD<MC> svd;
-    Eigen::BDCSVD<MC> svd;
-    svd.compute(W, Eigen::ComputeFullU | Eigen::ComputeFullV); // U S V^\dagger
+    Eigen::BDCSVD<MC, Eigen::ComputeFullU | Eigen::ComputeFullV> svd;
+    svd.compute(W); // U S V^\dagger
     {
       const MC check = svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixV().adjoint();
       double norm = (check-W).norm();

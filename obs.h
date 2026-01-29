@@ -62,7 +62,7 @@ struct Obs {
   void jackknife( T& mean, T& err,
 		  const int binsize = 1 ) const {
     const int nbins = v.size() / binsize;
-    const int N = binsize * nbins;
+    // const int N = binsize * nbins;
     std::vector<T> binned;
     std::vector<T> jack_avg;
 

@@ -51,7 +51,7 @@ struct ForceSingleLink{
 
   inline double operator[](const int i) const { return pi[i]; }
   inline double& operator[](const int i) { return pi[i]; }
-  inline int size() const { return pi.size(); }
+  inline Idx size() const { return pi.size(); }
 
   Force& operator+=(const Force& rhs){
     pi += rhs.pi;
@@ -252,6 +252,11 @@ struct ForceField {
   ForceField( const Lattice& lattice )
     : lattice( lattice )
     , field( lattice.n_links() )
+  {}
+
+  ForceField( const ForceField& other )
+    : lattice( other.lattice )
+    , field( other.field )
   {}
 
   inline V operator[](const Idx il) const { return field[il]; }

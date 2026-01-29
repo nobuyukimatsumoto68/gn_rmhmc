@@ -9,16 +9,16 @@
 
 
 
-struct WilsonGaussianAndDet2D {
+struct WilsonGaussianAndDet {
   using Force = ForceField<ForceSingleLink>;
   using Gauge = GaugeField;
   // using M = LinkConfig;
   using V = ForceSingleLink;
 
-  static constexpr int dim = 2;
-  using Idx = std::size_t;
+  // static constexpr int dim = 2;
+  // using Idx = std::size_t;
 
-  using Complex = std::complex<double>;
+  // using Complex = std::complex<double>;
   using MC = Eigen::Matrix<Complex, Nc, Nc, Eigen::RowMajor>;
 
   const Lattice& lattice;
@@ -29,7 +29,7 @@ struct WilsonGaussianAndDet2D {
 
   const Generators t;
 
-  WilsonGaussianAndDet2D(const Lattice& lattice,
+  WilsonGaussianAndDet(const Lattice& lattice,
 			 const double beta_,
 			 const double lambda_,
 			 const double kappa_ ,
@@ -42,16 +42,16 @@ struct WilsonGaussianAndDet2D {
     , t()
   {}
 
-  MC plaq( const Gauge& W, const Idx ix ) const {
+  MC plaq( const Gauge& W, const Idx ix, const int mu, const int nu ) const {
     const Coord x = lattice.get_coord(ix);
-    const Coord xp0 = lattice.cshift(x, 0);
-    const Coord xp1 = lattice.cshift(x, 1);
-    return W(x,0).U * W(xp0,1).U * W(xp1,0).U.adjoint() * W(x,1).U.adjoint();
+    const Coord xpmu = lattice.cshift(x, mu);
+    const Coord xpnu = lattice.cshift(x, nu);
+    return W(x,mu).U * W(xpmu,nu).U * W(xpnu,mu).U.adjoint() * W(x,nu).U.adjoint();
   }
 
-  MC staples( const Gauge& W, const Idx ix, const int mu ) const {
-    assert( 0<=mu && mu<2);
-    const int nu = 1-mu;
+  MC staples( const Gauge& W, const Idx ix, const int mu, const int nu ) const {
+    // assert( 0<=mu && mu<2);
+    // const int nu = 1-mu;
     const Coord x = lattice.get_coord(ix);
     const Coord x_pmu = lattice.cshift(x, mu);
     const Coord x_pnu = lattice.cshift(x, nu);
@@ -65,37 +65,31 @@ struct WilsonGaussianAndDet2D {
 
   double operator()( const Gauge& W ) const {
     double res = 0.0;
-    // for(Lattice::Idx ix=0; ix<W.lattice.vol; ix++){
-    //   res -= beta/Nc * plaq(W, ix).trace().real();
-
-    //   const Coord x = lattice.get_coord(ix);
-
-    //   res += 0.5*lambda/Nc * ( W(x,0).Phi - W(x,0).id() ).squaredNorm();
-    //   res -= kappa * std::log( W(x,0).Phi.determinant().real() );
-
-    //   res += 0.5*lambda/Nc * ( W(x,1).Phi - W(x,1).id() ).squaredNorm();
-    //   res -= kappa * std::log( W(x,1).Phi.determinant().real() );
-    // }
     std::vector<double> tmp( W.lattice.vol, 0.0 );
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(nparallel)
 #endif
     for(Idx ix=0; ix<lattice.vol; ix++) {
-      tmp[ix] -= beta/Nc * plaq(W, ix).trace().real();
-
-      tmp[ix] += 0.5*lambda/Nc * ( W(ix,0).Phi - c*W(ix,0).id() ).squaredNorm();
-      tmp[ix] -= kappa/Nc * std::log( W(ix,0).Phi.determinant().real() );
-
-      tmp[ix] += 0.5*lambda/Nc * ( W(ix,1).Phi - c*W(ix,1).id() ).squaredNorm();
-      tmp[ix] -= kappa/Nc * std::log( W(ix,1).Phi.determinant().real() );
+      for(int mu=0; mu<DIM; mu++){
+        for(int nu=mu+1; nu<DIM; nu++){
+          tmp[ix] -= beta/Nc * plaq(W, ix, mu, nu).trace().real();
+        }
+      tmp[ix] += 0.5*lambda/Nc * ( W(ix,mu).Phi - c*W(ix,mu).id() ).squaredNorm();
+      tmp[ix] -= kappa/Nc * std::log( W(ix,mu).Phi.determinant().real() );
+      }
     }
     for(auto elem : tmp ) res += elem;
-
     return res;
   }
 
-  inline double D( const Gauge& W, const Idx ix, const int mu, const int a ) const {
-    return beta/Nc * ( t[a] * W(ix,mu).U * staples( W, ix, mu ) ).trace().imag();
+  double D( const Gauge& W, const Idx ix, const int mu, const int a ) const {
+    double res = 0.0;
+    for(int nu=0; nu<DIM; nu++){
+      if(mu==nu) continue;
+      res += ( t[a] * W(ix,mu).U * staples( W, ix, mu, nu ) ).trace().imag();
+    }
+    res *= beta/Nc;
+    return res;
   }
 
   double dphi( const Gauge& W, const Idx ix, const int mu, const int a ) const {
@@ -129,7 +123,7 @@ struct WilsonGaussianAndDet2D {
 #pragma omp parallel for num_threads(nparallel)
 #endif
     for(Idx ix=0; ix<lattice.n_sites(); ix++) {
-      for(int mu=0; mu<dim; mu++){
+      for(int mu=0; mu<DIM; mu++){
 	res(ix,mu) = d(W,ix,mu);
       }}
     return res;

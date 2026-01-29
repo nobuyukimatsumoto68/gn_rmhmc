@@ -131,7 +131,7 @@ struct ProductKernel {
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(nparallel)
 #endif
-    for(int i=0; i<lattice.n_links(); i++) res[i] = field[i].d( f[i], W[i] );
+    for(Idx i=0; i<lattice.n_links(); i++) res[i] = field[i].d( f[i], W[i] );
     return res;
   }
 
@@ -140,13 +140,12 @@ struct ProductKernel {
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(nparallel)
 #endif
-    for(int i=0; i<lattice.n_links(); i++) res[i] = field[i].act( W[i], f[i] );
+    for(Idx i=0; i<lattice.n_links(); i++) res[i] = field[i].act( W[i], f[i] );
     return res;
   }
 
   double logdet( const Gauge& W ) const {
     double res = 0.0;
-    // for(int i=0; i<lattice.n_links(); i++) res += field[i].logdet( W[i] );
 
     std::vector<double> tmp( lattice.n_links() );
 #ifdef _OPENMP
@@ -164,7 +163,7 @@ struct ProductKernel {
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(nparallel)
 #endif
-    for(int i=0; i<lattice.n_links(); i++) res[i] = field[i].logdet_d( W[i] );
+    for(Idx i=0; i<lattice.n_links(); i++) res[i] = field[i].logdet_d( W[i] );
     return res;
   }
 
@@ -387,7 +386,7 @@ struct TrivialKernel {
 
   Force gen( const Gauge& W, Rng& rng ) const {
     Force p;
-    for(int i=0; i<p.size(); i++) p[i] = rng.gaussian();
+    for(Idx i=0; i<p.size(); i++) p[i] = rng.gaussian();
     return p;
   }
 };

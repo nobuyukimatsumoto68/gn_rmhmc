@@ -7,7 +7,7 @@
 #include <cassert>
 
 #include <omp.h>
-constexpr int nparallel=6;
+constexpr int nparallel=4;
 
 #define Nc 2
 #define NA Nc*Nc-1
@@ -51,7 +51,7 @@ int main( int argc, char *argv[] ){
 
   using Force = ForceField<ForceSingleLink>;
   using Gauge = GaugeField;
-  using Action = WilsonGaussianAndDet2D; // @@@
+  using Action = WilsonGaussianAndDet; // @@@
 
   using Kernel = ProductKernel<TrivialKernel>;
   // using Kernel = ProductKernel<IdpWHW, double>;
@@ -70,7 +70,7 @@ int main( int argc, char *argv[] ){
 
   // ------------------
 
-  double beta = 2.0; // 4.0
+  double beta = 0.05; // 4.0
   if (argc>2){ beta = atof(argv[2]); }
   double lambda = 1.0;
   if (argc>3){ lambda = atof(argv[3]); }
@@ -99,10 +99,10 @@ int main( int argc, char *argv[] ){
 
   // ------------------
 
-  const double lambda_0 = 2.0 * std::cyl_bessel_i( 1, beta ) / beta;
-  const double lambda_F = 2.0 * std::cyl_bessel_i( 2, beta ) / beta;
-  double exact = 0.0;
-  if( std::abs(lambda_0)>1.0e-14 ) exact = 2.0*lambda_F/lambda_0;
+  // const double lambda_0 = 2.0 * std::cyl_bessel_i( 1, beta ) / beta;
+  // const double lambda_F = ;
+  double exact = beta / Nc;
+  // if( std::abs(lambda_0)>1.0e-14 ) exact = 2.0*lambda_F/lambda_0;
   std::cout << "exact = " << exact << std::endl;
 
   Obs<double, Gauge> retrU( "retrU",
@@ -112,50 +112,57 @@ int main( int argc, char *argv[] ){
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(nparallel)
 #endif
-                              for(Action::Idx ix=0; ix<lat.vol; ix++) {
-                                tmp[ix] += S.plaq(W, ix).trace().real();
+                              for(Idx ix=0; ix<lat.vol; ix++) {
+                                for(int mu=0; mu<DIM; mu++){
+                                  for(int nu=mu+1; nu<DIM; nu++){
+                                    tmp[ix] += S.plaq(W, ix, mu, nu).trace().real();
+                                  }}
                               }
                               double res = 0.0;
                               for(auto elem : tmp ) res += elem;
                               res /= lat.vol;
+                              res /= 0.5*DIM*(DIM-1);
                               return res;
                             },
                             exact );
   obslist.push_back(&retrU);
 
-  Obs<double, Gauge> retrUsq( "retrUsq", beta,
-			      [&](const Gauge& W ){
-				std::vector<double> tmp( lat.vol, 0.0 );
-#ifdef _OPENMP
-#pragma omp parallel for num_threads(nparallel)
-#endif
-				for(Action::Idx ix=0; ix<lat.vol; ix++) {
-				  const Action::Complex tmp2 = S.plaq(W, ix).trace();
-				  tmp[ix] += (tmp2*tmp2).real();
-				}
-				double res = 0.0;
-				for(auto elem : tmp ) res += elem;
-				res /= lat.vol;
-				return res;
-			      },
-			      0.0 );
-  obslist.push_back(&retrUsq);
+//   Obs<double, Gauge> retrUsq( "retrUsq", beta,
+//                               [&](const Gauge& W ){
+//                                 std::vector<double> tmp( lat.vol, 0.0 );
+// #ifdef _OPENMP
+// #pragma omp parallel for num_threads(nparallel)
+// #endif
+//                                 for(Idx ix=0; ix<lat.vol; ix++) {
+//                                   for(int mu=0; mu<DIM; mu++){
+//                                     for(int nu=mu+1; nu<DIM; nu++){
+//                                       const Complex tmp2 = S.plaq(W, ix, mu, nu).trace();
+//                                       tmp[ix] += (tmp2*tmp2).real();
+//                                     }}
+//                                 }
+//                                 double res = 0.0;
+//                                 for(auto elem : tmp ) res += elem;
+//                                 res /= lat.vol;
+//                                 return res;
+//                               },
+//                               0.0 );
+//   obslist.push_back(&retrUsq);
 
-  Obs<double, Gauge> phi_norm( "trPhisq", beta, [&](const Gauge& W ){
-    std::vector<double> tmp( lat.vol, 0.0 );
-#ifdef _OPENMP
-#pragma omp parallel for num_threads(nparallel)
-#endif
-    for(Action::Idx ix=0; ix<lat.vol; ix++) {
-      tmp[ix] += ( W[ix].Phi - c*W[ix].id() ).squaredNorm();
-    }
-    double res = 0.0;
-    for(auto elem : tmp ) res += elem;
-    res *= 0.5/Nc;
-    res /= lat.vol;
-    return res;
-  }, 0.0 );
-  obslist.push_back(&phi_norm);
+//   Obs<double, Gauge> phi_norm( "trPhisq", beta, [&](const Gauge& W ){
+//     std::vector<double> tmp( lat.vol, 0.0 );
+// #ifdef _OPENMP
+// #pragma omp parallel for num_threads(nparallel)
+// #endif
+//     for(Idx ix=0; ix<lat.vol; ix++) {
+//       tmp[ix] += ( W[ix].Phi - c*W[ix].id() ).squaredNorm();
+//     }
+//     double res = 0.0;
+//     for(auto elem : tmp ) res += elem;
+//     res *= 0.5/Nc;
+//     res /= lat.vol;
+//     return res;
+//   }, 0.0 );
+//   obslist.push_back(&phi_norm);
   // Obs<double, double> acceptance( "acceptance", beta, [](const double r ){
   //   return r;
   // }, 0.0 );
