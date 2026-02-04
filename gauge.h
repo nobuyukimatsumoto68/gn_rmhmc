@@ -17,6 +17,26 @@
 */
 
 
+template<typename M>
+M AH(const M& m, const int kmax=20){
+  M res = M::Zero();
+  M old = M::Zero();
+  double factorial=1.0;
+  M pow = M::Identity();
+
+  int k;
+  for(k=0; k<kmax; k++){
+    factorial *= k+1;
+    res += pow/factorial;
+    pow = pow*m;
+    if( (res-old).norm()<1.0e-14 ) break;
+    old = res;
+  }
+  if(k>=kmax-1) assert( false );
+  return res;
+}
+
+
 
 struct LinkConfig { // Force=ForceSingleLink
   using Gauge=LinkConfig;
@@ -34,7 +54,7 @@ struct LinkConfig { // Force=ForceSingleLink
   inline double re(const std::complex<double>& c) const { return reinterpret_cast<const double (&)[2]>(c)[0]; }
   inline double im(const std::complex<double>& c) const { return reinterpret_cast<const double (&)[2]>(c)[1]; }
 
-  const Generators t;
+  const Generators2 t;
   MC W;
   double theta;
   MC U;
@@ -293,7 +313,8 @@ struct LinkConfig { // Force=ForceSingleLink
   MG J() const {
     MG res = MG::Zero();
     for(int a=0; a<NA; a++){
-      const MC mat = ( I*u()*Phi*t[a]*U );
+      // const MC mat = ( I*u()*Phi*t[a]*U );
+      const MC mat = ( u()*Phi*t[a]*U );
       const MR Re = mat.real(); // to avoid bugs of Eigen; no const, no .real().data()
       const MR Im = mat.imag(); // to avoid bugs of Eigen; no const, no .real().data()
       res.block(a, 0, 1, Nc*Nc) = Eigen::Map<const VH>( Re.data() ).transpose();
@@ -307,7 +328,7 @@ struct LinkConfig { // Force=ForceSingleLink
       res.block(Nc*Nc-1, Nc*Nc, 1, Nc*Nc) = Eigen::Map<const VH>( Im.data() ).transpose();
     }
     for(int a=0; a<NA; a++){
-      const MC mat = ( u()*t[a]*U );
+      const MC mat = ( -I*u()*t[a]*U );
       const MR Re = mat.real(); // to avoid bugs of Eigen; no const, no .real().data()
       const MR Im = mat.imag(); // to avoid bugs of Eigen; no const, no .real().data()
       res.block(Nc*Nc+a, 0, 1, Nc*Nc) = Eigen::Map<const VH>( Re.data() ).transpose();
@@ -333,242 +354,242 @@ struct LinkConfig { // Force=ForceSingleLink
 
 
 
-struct LinkConf { // Force=ForceSingleLink
-  using Gauge=LinkConf;
-  using Force=LinkForce;
+// struct LinkConf { // Force=ForceSingleLink
+//   using Gauge=LinkConf;
+//   using Force=LinkForce;
 
-  using Rng = SingleRng;
+//   using Rng = SingleRng;
 
-  using Complex = std::complex<double>;
-  static constexpr Complex I = Complex(0.0, 1.0);
+//   using Complex = std::complex<double>;
+//   static constexpr Complex I = Complex(0.0, 1.0);
 
-  using MC = Eigen::Matrix<Complex, Nc, Nc, Eigen::RowMajor>;
-  using MR = Eigen::Matrix<double, Nc, Nc, Eigen::RowMajor>;
-  using VG = Eigen::Matrix<double, NG, 1>;
-  using VH = Eigen::Matrix<double, NH, 1>;
-  using MG = Eigen::Matrix<double, NG, NG, Eigen::RowMajor>;
+//   using MC = Eigen::Matrix<Complex, Nc, Nc, Eigen::RowMajor>;
+//   using MR = Eigen::Matrix<double, Nc, Nc, Eigen::RowMajor>;
+//   using VG = Eigen::Matrix<double, NG, 1>;
+//   using VH = Eigen::Matrix<double, NH, 1>;
+//   using MG = Eigen::Matrix<double, NG, NG, Eigen::RowMajor>;
 
-  inline double& re(std::complex<double>& c){ return reinterpret_cast<double (&)[2]>(c)[0]; }
-  inline double& im(std::complex<double>& c){ return reinterpret_cast<double (&)[2]>(c)[1]; }
-  inline double re(const std::complex<double>& c) const { return reinterpret_cast<const double (&)[2]>(c)[0]; }
-  inline double im(const std::complex<double>& c) const { return reinterpret_cast<const double (&)[2]>(c)[1]; }
+//   inline double& re(std::complex<double>& c){ return reinterpret_cast<double (&)[2]>(c)[0]; }
+//   inline double& im(std::complex<double>& c){ return reinterpret_cast<double (&)[2]>(c)[1]; }
+//   inline double re(const std::complex<double>& c) const { return reinterpret_cast<const double (&)[2]>(c)[0]; }
+//   inline double im(const std::complex<double>& c) const { return reinterpret_cast<const double (&)[2]>(c)[1]; }
 
-  const Generators t;
-  MC W;
-  double theta;
-  MC U;
-  MC Phi;
+//   const Generators2 t;
+//   MC W;
+//   double theta;
+//   MC U;
+//   MC Phi;
 
-  LinkConf()
-    : t()
-    , W( id() )
-    , theta( 0.0 )
-    , U( id() )
-    , Phi( id() )
-  {
-    check_consistency();
-  }
+//   LinkConf()
+//     : t()
+//     , W( id() )
+//     , theta( 0.0 )
+//     , U( id() )
+//     , Phi( id() )
+//   {
+//     check_consistency();
+//   }
 
-  LinkConf( const LinkConf& other )
-    : t( other.t )
-    , W( other.W )
-    , theta( other.theta )
-    , U( other.U )
-    , Phi( other.Phi )
-  {
-    check_consistency();
-  }
+//   LinkConf( const LinkConf& other )
+//     : t( other.t )
+//     , W( other.W )
+//     , theta( other.theta )
+//     , U( other.U )
+//     , Phi( other.Phi )
+//   {
+//     check_consistency();
+//   }
 
-  LinkConf& operator=(const LinkConf& other) {
-    if (this == &other) return *this;
+//   LinkConf& operator=(const LinkConf& other) {
+//     if (this == &other) return *this;
 
-    W = other.W;
-    theta = other.theta;
-    U = other.U;
-    Phi = other.Phi;
-    check_consistency();
+//     W = other.W;
+//     theta = other.theta;
+//     U = other.U;
+//     Phi = other.Phi;
+//     check_consistency();
 
-    return *this;
-  }
+//     return *this;
+//   }
 
-  Gauge& operator+=(const Force& f) {
-    const VG wbasis = f.wbasis( J() );
-    const VH dwr = wbasis.segment(0, Nc*Nc);
-    const VH dwi = wbasis.segment(Nc*Nc, Nc*Nc);
-    W += Eigen::Map<const MR>( dwr.data() );
-    W += I*Eigen::Map<const MR>( dwi.data() );
-    update_others();
-    return *this;
-  }
-  friend Gauge operator+(Gauge v, const Force& w) { v += w; return v; }
+//   Gauge& operator+=(const Force& f) {
+//     const VG wbasis = f.wbasis( J() );
+//     const VH dwr = wbasis.segment(0, Nc*Nc);
+//     const VH dwi = wbasis.segment(Nc*Nc, Nc*Nc);
+//     W += Eigen::Map<const MR>( dwr.data() );
+//     W += I*Eigen::Map<const MR>( dwi.data() );
+//     update_others();
+//     return *this;
+//   }
+//   friend Gauge operator+(Gauge v, const Force& w) { v += w; return v; }
 
-  Gauge& operator-=(const Force& f) {
-    const VG wbasis = f.wbasis( J() );
-    const VH dwr = wbasis.segment(0, Nc*Nc);
-    const VH dwi = wbasis.segment(Nc*Nc, Nc*Nc);
-    W -= Eigen::Map<const MR>( dwr.data() );
-    W -= I*Eigen::Map<const MR>( dwi.data() );
-    update_others();
-    return *this;
-  }
-  friend Gauge operator-(Gauge v, const Force& w) { v -= w; return v; }
+//   Gauge& operator-=(const Force& f) {
+//     const VG wbasis = f.wbasis( J() );
+//     const VH dwr = wbasis.segment(0, Nc*Nc);
+//     const VH dwi = wbasis.segment(Nc*Nc, Nc*Nc);
+//     W -= Eigen::Map<const MR>( dwr.data() );
+//     W -= I*Eigen::Map<const MR>( dwi.data() );
+//     update_others();
+//     return *this;
+//   }
+//   friend Gauge operator-(Gauge v, const Force& w) { v -= w; return v; }
 
-  Gauge& operator+=(const Gauge& rhs) {
-    W += rhs.W;
-    update_others();
-    return *this;
-  }
-  friend Gauge operator+(Gauge v, const Gauge& w) { v += w; return v; }
+//   Gauge& operator+=(const Gauge& rhs) {
+//     W += rhs.W;
+//     update_others();
+//     return *this;
+//   }
+//   friend Gauge operator+(Gauge v, const Gauge& w) { v += w; return v; }
 
-  Gauge& operator-=(const Gauge& rhs) {
-    W -= rhs.W;
-    update_others();
-    return *this;
-  }
-  friend Gauge operator-(Gauge v, const Gauge& w) { v -= w; return v; }
+//   Gauge& operator-=(const Gauge& rhs) {
+//     W -= rhs.W;
+//     update_others();
+//     return *this;
+//   }
+//   friend Gauge operator-(Gauge v, const Gauge& w) { v -= w; return v; }
 
-  inline MC id() const { return MC::Identity(); }
-  inline Complex u1( const double alpha ) const { return std::exp(I*alpha); }
-  inline Complex u() const { return u1(theta); }
-  inline MC operator()() const { return W; }
-  inline Complex operator()(const int i, const int j) const { return W(i,j); }
-  inline Complex& operator()(const int i, const int j) { return W(i,j); }
-  inline double norm() const { return W.norm(); }
+//   inline MC id() const { return MC::Identity(); }
+//   inline Complex u1( const double alpha ) const { return std::exp(I*alpha); }
+//   inline Complex u() const { return u1(theta); }
+//   inline MC operator()() const { return W; }
+//   inline Complex operator()(const int i, const int j) const { return W(i,j); }
+//   inline Complex& operator()(const int i, const int j) { return W(i,j); }
+//   inline double norm() const { return W.norm(); }
 
-  void get_qij( int& q, int& i, int& j, const int qij ) const {
-    if(qij<Nc*Nc){
-      q=0;
-      j=qij%Nc;
-      i=(qij-j+1)/Nc;
-    }
-    else if(qij<2*Nc*Nc) {
-      q=1;
-      j=qij%Nc;
-      i=(qij-j+1-Nc*Nc)/Nc;
-    }
-    else assert( false );
-  }
+//   void get_qij( int& q, int& i, int& j, const int qij ) const {
+//     if(qij<Nc*Nc){
+//       q=0;
+//       j=qij%Nc;
+//       i=(qij-j+1)/Nc;
+//     }
+//     else if(qij<2*Nc*Nc) {
+//       q=1;
+//       j=qij%Nc;
+//       i=(qij-j+1-Nc*Nc)/Nc;
+//     }
+//     else assert( false );
+//   }
 
-  double operator[](const int qij) const {
-    int q,i,j;
-    get_qij( q,i,j, qij );
-    if(q==0) return re(W(i,j));
-    else if(q==1) return im(W(i,j));
-    else assert( false );
-  }
+//   double operator[](const int qij) const {
+//     int q,i,j;
+//     get_qij( q,i,j, qij );
+//     if(q==0) return re(W(i,j));
+//     else if(q==1) return im(W(i,j));
+//     else assert( false );
+//   }
 
-  double& operator[](const int qij) {
-    int q,i,j;
-    get_qij( q,i,j, qij );
-    if(q==0) return re(W(i,j));
-    else if(q==1) return im(W(i,j));
-    else assert( false );
-  }
+//   double& operator[](const int qij) {
+//     int q,i,j;
+//     get_qij( q,i,j, qij );
+//     if(q==0) return re(W(i,j));
+//     else if(q==1) return im(W(i,j));
+//     else assert( false );
+//   }
 
-  double mod2pi( const double alpha ) const {
-    double res = alpha + 4.0*M_PI;
-    res -= int(std::floor(res/(2.0*M_PI)))*2.0*M_PI;
-    return res;
-  }
+//   double mod2pi( const double alpha ) const {
+//     double res = alpha + 4.0*M_PI;
+//     res -= int(std::floor(res/(2.0*M_PI)))*2.0*M_PI;
+//     return res;
+//   }
 
-  // void randomize( Rng& rng, const double width=1.0, const double c = 1.0 ){
-  //   for(int i=0; i<Nc; i++){
-  //     for(int j=0; j<Nc; j++){
-  //       (*this)(i, j) = rng.gaussian() + I * rng.gaussian();
-  //       (*this)(i, j) *= width;
-  //     }}
-  //   update_others();
-  //   // for(int i=0; i<Nc; i++){
-  //   //   for(int j=0; j<Nc; j++){
-  //   //     W(i, j) = f1() + I*f2();
-  //   //   }}
-  //   // update_others();
-  // }
+//   // void randomize( Rng& rng, const double width=1.0, const double c = 1.0 ){
+//   //   for(int i=0; i<Nc; i++){
+//   //     for(int j=0; j<Nc; j++){
+//   //       (*this)(i, j) = rng.gaussian() + I * rng.gaussian();
+//   //       (*this)(i, j) *= width;
+//   //     }}
+//   //   update_others();
+//   //   // for(int i=0; i<Nc; i++){
+//   //   //   for(int j=0; j<Nc; j++){
+//   //   //     W(i, j) = f1() + I*f2();
+//   //   //   }}
+//   //   // update_others();
+//   // }
 
-  void check_consistency( const double TOL=1.0e-10 ) const {
-    const MC check = u()*Phi*U;
-    const double norm = (check-W).norm()/(std::sqrt(2.0)*Nc);
-    if(norm > TOL) {
-      std::clog << "norm = " << norm << std::endl;
-      std::clog << "det Phi = " << Phi.determinant() << std::endl;
-    }
-    assert( norm<TOL );
-  }
+//   void check_consistency( const double TOL=1.0e-10 ) const {
+//     const MC check = u()*Phi*U;
+//     const double norm = (check-W).norm()/(std::sqrt(2.0)*Nc);
+//     if(norm > TOL) {
+//       std::clog << "norm = " << norm << std::endl;
+//       std::clog << "det Phi = " << Phi.determinant() << std::endl;
+//     }
+//     assert( norm<TOL );
+//   }
 
 
-  void decomposition(){
-    // Eigen::JacobiSVD<MC> svd;
-    Eigen::BDCSVD<MC, Eigen::ComputeFullU | Eigen::ComputeFullV> svd;
-    svd.compute(W); // U S V^\dagger
-    {
-      const MC check = svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixV().adjoint();
-      double norm = (check-W).norm();
-      if(norm>1.0e-10) {
-        std::clog << "W = " << W << std::endl;
-        std::clog << "det W = " << W.determinant() << std::endl;
-        std::clog << "norm = " << norm << std::endl;
-      }
-      assert( norm<1.0e-10 );
-    }
-    Phi = svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixU().adjoint();
-    const MC Omega = u1(-theta) * svd.matrixU() * svd.matrixV().adjoint();
-    const double dtheta = std::arg( Omega.determinant() ) / Nc;
-    theta = mod2pi( theta + dtheta );
-    U = u1(-dtheta) * Omega;
-  }
+//   void decomposition(){
+//     // Eigen::JacobiSVD<MC> svd;
+//     Eigen::BDCSVD<MC, Eigen::ComputeFullU | Eigen::ComputeFullV> svd;
+//     svd.compute(W); // U S V^\dagger
+//     {
+//       const MC check = svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixV().adjoint();
+//       double norm = (check-W).norm();
+//       if(norm>1.0e-10) {
+//         std::clog << "W = " << W << std::endl;
+//         std::clog << "det W = " << W.determinant() << std::endl;
+//         std::clog << "norm = " << norm << std::endl;
+//       }
+//       assert( norm<1.0e-10 );
+//     }
+//     Phi = svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixU().adjoint();
+//     const MC Omega = u1(-theta) * svd.matrixU() * svd.matrixV().adjoint();
+//     const double dtheta = std::arg( Omega.determinant() ) / Nc;
+//     theta = mod2pi( theta + dtheta );
+//     U = u1(-dtheta) * Omega;
+//   }
 
-  void update(){
-    W = u()*Phi*U;
-    check_consistency();
-  }
+//   void update(){
+//     W = u()*Phi*U;
+//     check_consistency();
+//   }
 
-  void update_from( const MC& Wnew ){
-    W = Wnew;
-    decomposition();
-    check_consistency();
-  }
+//   void update_from( const MC& Wnew ){
+//     W = Wnew;
+//     decomposition();
+//     check_consistency();
+//   }
 
-  void update_others(){
-    decomposition();
-    check_consistency();
-  }
+//   void update_others(){
+//     decomposition();
+//     check_consistency();
+//   }
 
-  MG J() const {
-    MG res = MG::Zero();
-    for(int a=0; a<NA; a++){
-      const MC mat = ( I*u()*Phi*t[a]*U );
-      const MR Re = mat.real(); // to avoid bugs of Eigen; no const, no .real().data()
-      const MR Im = mat.imag(); // to avoid bugs of Eigen; no const, no .real().data()
-      res.block(a, 0, 1, Nc*Nc) = Eigen::Map<const VH>( Re.data() ).transpose();
-      res.block(a, Nc*Nc, 1, Nc*Nc) = Eigen::Map<const VH>( Im.data() ).transpose();
-    }
-    { // 0th element
-      const MC mat = ( I*u()*Phi*U );
-      const MR Re = mat.real(); // to avoid bugs of Eigen; no const, no .real().data()
-      const MR Im = mat.imag(); // to avoid bugs of Eigen; no const, no .real().data()
-      res.block(Nc*Nc-1, 0, 1, Nc*Nc) = Eigen::Map<const VH>( Re.data() ).transpose();
-      res.block(Nc*Nc-1, Nc*Nc, 1, Nc*Nc) = Eigen::Map<const VH>( Im.data() ).transpose();
-    }
-    for(int a=0; a<NA; a++){
-      const MC mat = ( u()*t[a]*U );
-      const MR Re = mat.real(); // to avoid bugs of Eigen; no const, no .real().data()
-      const MR Im = mat.imag(); // to avoid bugs of Eigen; no const, no .real().data()
-      res.block(Nc*Nc+a, 0, 1, Nc*Nc) = Eigen::Map<const VH>( Re.data() ).transpose();
-      res.block(Nc*Nc+a, Nc*Nc, 1, Nc*Nc) = Eigen::Map<const VH>( Im.data() ).transpose();
-    }
-    { // 0th element
-      const MC mat = ( u()*U );
-      const MR Re = mat.real(); // to avoid bugs of Eigen; no const, no .real().data()
-      const MR Im = mat.imag(); // to avoid bugs of Eigen; no const, no .real().data()
-      res.block(2*Nc*Nc-1, 0, 1, Nc*Nc) = Eigen::Map<const VH>( Re.data() ).transpose();
-      res.block(2*Nc*Nc-1, Nc*Nc, 1, Nc*Nc) = Eigen::Map<const VH>( Im.data() ).transpose();
-    }
-    return res;
-  }
+//   MG J() const {
+//     MG res = MG::Zero();
+//     for(int a=0; a<NA; a++){
+//       const MC mat = ( I*u()*Phi*t[a]*U );
+//       const MR Re = mat.real(); // to avoid bugs of Eigen; no const, no .real().data()
+//       const MR Im = mat.imag(); // to avoid bugs of Eigen; no const, no .real().data()
+//       res.block(a, 0, 1, Nc*Nc) = Eigen::Map<const VH>( Re.data() ).transpose();
+//       res.block(a, Nc*Nc, 1, Nc*Nc) = Eigen::Map<const VH>( Im.data() ).transpose();
+//     }
+//     { // 0th element
+//       const MC mat = ( I*u()*Phi*U );
+//       const MR Re = mat.real(); // to avoid bugs of Eigen; no const, no .real().data()
+//       const MR Im = mat.imag(); // to avoid bugs of Eigen; no const, no .real().data()
+//       res.block(Nc*Nc-1, 0, 1, Nc*Nc) = Eigen::Map<const VH>( Re.data() ).transpose();
+//       res.block(Nc*Nc-1, Nc*Nc, 1, Nc*Nc) = Eigen::Map<const VH>( Im.data() ).transpose();
+//     }
+//     for(int a=0; a<NA; a++){
+//       const MC mat = ( u()*t[a]*U );
+//       const MR Re = mat.real(); // to avoid bugs of Eigen; no const, no .real().data()
+//       const MR Im = mat.imag(); // to avoid bugs of Eigen; no const, no .real().data()
+//       res.block(Nc*Nc+a, 0, 1, Nc*Nc) = Eigen::Map<const VH>( Re.data() ).transpose();
+//       res.block(Nc*Nc+a, Nc*Nc, 1, Nc*Nc) = Eigen::Map<const VH>( Im.data() ).transpose();
+//     }
+//     { // 0th element
+//       const MC mat = ( u()*U );
+//       const MR Re = mat.real(); // to avoid bugs of Eigen; no const, no .real().data()
+//       const MR Im = mat.imag(); // to avoid bugs of Eigen; no const, no .real().data()
+//       res.block(2*Nc*Nc-1, 0, 1, Nc*Nc) = Eigen::Map<const VH>( Re.data() ).transpose();
+//       res.block(2*Nc*Nc-1, Nc*Nc, 1, Nc*Nc) = Eigen::Map<const VH>( Im.data() ).transpose();
+//     }
+//     return res;
+//   }
 
-  friend std::ostream& operator<<(std::ostream& os, const Gauge& v){ os << v.W; return os; }
+//   friend std::ostream& operator<<(std::ostream& os, const Gauge& v){ os << v.W; return os; }
 
-};
+// };
 
 
 
@@ -576,11 +597,12 @@ struct LinkConf { // Force=ForceSingleLink
 
 
 // template<int DIM>
+template<typename M=LinkConfig>
 struct GaugeField {
   using Idx = std::size_t;
   using Coord=std::array<int, DIM>;
-  using M=LinkConfig;
-  using Gauge=GaugeField;
+  // using M=LinkConfig;
+  using Gauge=GaugeField<M>;
   using Force = ForceField<ForceSingleLink>; // <ForceSingleLink>;
   using Rng = ParallelRngLink;
 

@@ -9,9 +9,10 @@
 
 
 
+template<typename M>
 struct WilsonGaussianAndDet {
   using Force = ForceField<ForceSingleLink>;
-  using Gauge = GaugeField;
+  using Gauge = GaugeField<M>;
   // using M = LinkConfig;
   using V = ForceSingleLink;
 
@@ -27,7 +28,8 @@ struct WilsonGaussianAndDet {
   const double kappa;
   const double c;
 
-  const Generators t;
+  // const Generators t;
+  const Generators2 t;
 
   WilsonGaussianAndDet(const Lattice& lattice,
 			 const double beta_,
@@ -86,16 +88,19 @@ struct WilsonGaussianAndDet {
     double res = 0.0;
     for(int nu=0; nu<DIM; nu++){
       if(mu==nu) continue;
-      res += ( t[a] * W(ix,mu).U * staples( W, ix, mu, nu ) ).trace().imag();
+      // res += ( t[a] * W(ix,mu).U * staples( W, ix, mu, nu ) ).trace().imag();
+      res += ( -I*t[a] * W(ix,mu).U * staples( W, ix, mu, nu ) ).trace().imag();
     }
     res *= beta/Nc;
     return res;
   }
 
   double dphi( const Gauge& W, const Idx ix, const int mu, const int a ) const {
-    double res = ( W(ix,mu).Phi * t[a] ).trace().real();
+    // double res = ( W(ix,mu).Phi * t[a] ).trace().real();
+    double res = ( W(ix,mu).Phi * (-I)*t[a] ).trace().real();
     res *= lambda/Nc;
-    res -= kappa/Nc * (W(ix,mu).Phi.inverse()*t[a]).trace().real();
+    // res -= kappa/Nc * (W(ix,mu).Phi.inverse()*t[a]).trace().real();
+    res -= kappa/Nc * (W(ix,mu).Phi.inverse()*(-I)*t[a]).trace().real();
     return res;
   }
 

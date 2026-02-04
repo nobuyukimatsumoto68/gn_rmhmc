@@ -97,10 +97,11 @@ struct IdpWHW {
 
 
 
-template <class Kernel, typename... Arguments>
+// template <class Kernel, typename... Arguments>
+template <class Kernel, typename M, typename... Arguments>
 struct ProductKernel {
   using Force = ForceField<ForceSingleLink>;
-  using Gauge = GaugeField;
+  using Gauge = GaugeField<M>;
   using Rng = ParallelRngLink;
 
   const Lattice& lattice;
@@ -182,37 +183,37 @@ struct ProductKernel {
 
 
 
-struct TrivialKernel2 {
-  using Force = LinkForce;
-  using Gauge = LinkConf;
-  using Rng = SingleRng;
+// struct TrivialKernel2 {
+//   using Force = LinkForce;
+//   using Gauge = LinkConf;
+//   using Rng = SingleRng;
 
-  TrivialKernel2(){};
+//   TrivialKernel2(){};
 
-  inline double operator()( const Force& f, const Gauge& W ) const {
-    return f.wbasis( W.J() ).squaredNorm();
-    // return f.square();
-  }
-  inline Force d( const Force& f, const Gauge& W ) const { return Force(); } // zero
-  inline Force act( const Gauge& W, const Force& f ) const { return f; }
-  inline double logdet( const Gauge& W ) const { return 0.0; }
-  inline Force logdet_d( const Gauge& W ) const { return Force(); } // zero
+//   inline double operator()( const Force& f, const Gauge& W ) const {
+//     return f.wbasis( W.J() ).squaredNorm();
+//     // return f.square();
+//   }
+//   inline Force d( const Force& f, const Gauge& W ) const { return Force(); } // zero
+//   inline Force act( const Gauge& W, const Force& f ) const { return f; }
+//   inline double logdet( const Gauge& W ) const { return 0.0; }
+//   inline Force logdet_d( const Gauge& W ) const { return Force(); } // zero
 
-  Force gen( const Gauge& W, Rng& rng ) const {
-    Force::VG p;
-    for(auto& elem : p) elem = rng.gaussian();
-    return Force( p, W.J() );
-    // Force p;
-    // for(int a=0; a<NA; a++) p.pi(a) = rng.gaussian();
-    // p.pi0 = rng.gaussian();
-    // for(int a=0; a<NA; a++) p.rho(a) = rng.gaussian();
-    // p.rho0 = rng.gaussian();
-    // return p;
-    // Force::VG wbasis; //  = f.wbasis( W.J() );
-    // for(auto& elem : wbasis ) elem = rng.gaussian();
-    // return Force( wbasis, W.J() );
-  }
-};
+//   Force gen( const Gauge& W, Rng& rng ) const {
+//     Force::VG p;
+//     for(auto& elem : p) elem = rng.gaussian();
+//     return Force( p, W.J() );
+//     // Force p;
+//     // for(int a=0; a<NA; a++) p.pi(a) = rng.gaussian();
+//     // p.pi0 = rng.gaussian();
+//     // for(int a=0; a<NA; a++) p.rho(a) = rng.gaussian();
+//     // p.rho0 = rng.gaussian();
+//     // return p;
+//     // Force::VG wbasis; //  = f.wbasis( W.J() );
+//     // for(auto& elem : wbasis ) elem = rng.gaussian();
+//     // return Force( wbasis, W.J() );
+//   }
+// };
 
 
 
@@ -371,9 +372,10 @@ struct TrivialKernel2 {
 
 
 
+template<typename M>
 struct TrivialKernel {
   using Force = ForceSingleLink;
-  using Gauge = LinkConfig;
+  using Gauge = M;
   using Rng = SingleRng;
 
   TrivialKernel(){};

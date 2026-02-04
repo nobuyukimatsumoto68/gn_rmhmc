@@ -78,163 +78,164 @@ struct ForceSingleLink{
 
 
 
-struct LinkForce{
-  using Force = LinkForce;
-  // using Gauge = LinkConfig;
+// struct LinkForce{
+//   using Force = LinkForce;
+//   // using Gauge = LinkConfig;
 
-  using Complex = std::complex<double>;
-  using MC = Eigen::Matrix<Complex, Nc, Nc, Eigen::RowMajor>;
+//   using Complex = std::complex<double>;
+//   using MC = Eigen::Matrix<Complex, Nc, Nc, Eigen::RowMajor>;
 
-  using VA = Eigen::Matrix<double, NA, 1>;
-  using VG = Eigen::Matrix<double, NG, 1>;
-  using MG = Eigen::Matrix<double, NG, NG, Eigen::RowMajor>;
+//   using VA = Eigen::Matrix<double, NA, 1>;
+//   using VG = Eigen::Matrix<double, NG, 1>;
+//   using MG = Eigen::Matrix<double, NG, NG, Eigen::RowMajor>;
 
-  const Generators t;
+//   // const Generators t;
+//   const Generators2 t;
 
-  VA pi;
-  double pi0;
-  VA rho;
-  double rho0;
+//   VA pi;
+//   double pi0;
+//   VA rho;
+//   double rho0;
 
-  LinkForce()
-    : t()
-  {
-    pi = VA::Zero();
-    pi0 = 0.0;
-    rho = VA::Zero();
-    rho0 = 0.0;
-  }
+//   LinkForce()
+//     : t()
+//   {
+//     pi = VA::Zero();
+//     pi0 = 0.0;
+//     rho = VA::Zero();
+//     rho0 = 0.0;
+//   }
 
-  // LinkForce(const VG& pi_) {
-  //   pi = pi_;
-  // }
+//   // LinkForce(const VG& pi_) {
+//   //   pi = pi_;
+//   // }
 
-  LinkForce(const LinkForce& other)
-    : pi(other.pi)
-    , pi0(other.pi0)
-    , rho(other.rho)
-    , rho0(other.rho0)
-  {}
+//   LinkForce(const LinkForce& other)
+//     : pi(other.pi)
+//     , pi0(other.pi0)
+//     , rho(other.rho)
+//     , rho0(other.rho0)
+//   {}
 
-  LinkForce(const VG& wbasis, const MG& J)
-  {
-    pi = VA::Zero();
-    pi0 = 0.0;
-    rho = VA::Zero();
-    rho0 = 0.0;
-    update_from( wbasis, J );
-  }
+//   LinkForce(const VG& wbasis, const MG& J)
+//   {
+//     pi = VA::Zero();
+//     pi0 = 0.0;
+//     rho = VA::Zero();
+//     rho0 = 0.0;
+//     update_from( wbasis, J );
+//   }
 
-  VG a0basis() const {
-    VG res;
-    res.segment(0, NA) = pi;
-    res[NA] = pi0;
-    res.segment(NA+1, NA) = rho;
-    res[2*NA+1] = rho0;
-    return res;
-  }
+//   VG a0basis() const {
+//     VG res;
+//     res.segment(0, NA) = pi;
+//     res[NA] = pi0;
+//     res.segment(NA+1, NA) = rho;
+//     res[2*NA+1] = rho0;
+//     return res;
+//   }
 
-  inline VG wbasis( const MG& J ) const {
-    const Eigen::PartialPivLU<MG> lu( J );
-    return lu.solve( a0basis() );
-    // return a0basis().transpose() * J; // lu.solve( a0basis() ).transpose();
-  }
+//   inline VG wbasis( const MG& J ) const {
+//     const Eigen::PartialPivLU<MG> lu( J );
+//     return lu.solve( a0basis() );
+//     // return a0basis().transpose() * J; // lu.solve( a0basis() ).transpose();
+//   }
 
-  void update_from( const VG& w_basis, const MG& J ) {
-    // const Eigen::PartialPivLU<MG> lu( J.transpose() );
-    // const VG tmp = lu.solve( w_basis );
-    const VG tmp = J * w_basis;
-    pi = tmp.segment(0, NA);
-    pi0 = tmp[NA];
-    rho = tmp.segment(NA+1, NA);
-    rho0 = tmp[2*NA+1];
-  }
+//   void update_from( const VG& w_basis, const MG& J ) {
+//     // const Eigen::PartialPivLU<MG> lu( J.transpose() );
+//     // const VG tmp = lu.solve( w_basis );
+//     const VG tmp = J * w_basis;
+//     pi = tmp.segment(0, NA);
+//     pi0 = tmp[NA];
+//     rho = tmp.segment(NA+1, NA);
+//     rho0 = tmp[2*NA+1];
+//   }
 
-  double norm() const {
-    double sq = 0.0;
-    sq += pi.squaredNorm();
-    sq += pi0*pi0;
-    sq += rho.squaredNorm();
-    sq += rho0*rho0;
-    return std::sqrt(sq);
-  }
+//   double norm() const {
+//     double sq = 0.0;
+//     sq += pi.squaredNorm();
+//     sq += pi0*pi0;
+//     sq += rho.squaredNorm();
+//     sq += rho0*rho0;
+//     return std::sqrt(sq);
+//   }
 
-  double square() const {
-    double sq = 0.0;
-    sq += pi.squaredNorm();
-    sq += pi0*pi0;
-    sq += rho.squaredNorm();
-    sq += rho0*rho0;
-    return std::sqrt(sq);
-  }
+//   double square() const {
+//     double sq = 0.0;
+//     sq += pi.squaredNorm();
+//     sq += pi0*pi0;
+//     sq += rho.squaredNorm();
+//     sq += rho0*rho0;
+//     return std::sqrt(sq);
+//   }
 
-  Force& operator=(const Force& other) {
-    if (this == &other) return *this;
-    pi = other.pi;
-    pi0 = other.pi0;
-    rho = other.rho;
-    rho0 = other.rho0;
-    return *this;
-  }
+//   Force& operator=(const Force& other) {
+//     if (this == &other) return *this;
+//     pi = other.pi;
+//     pi0 = other.pi0;
+//     rho = other.rho;
+//     rho0 = other.rho0;
+//     return *this;
+//   }
 
-  MC get_pi() const {
-    MC res;
-    for(int a=0; a<NA; a++) res += pi(a)*t[a];
-    return res;
-  }
+//   MC get_pi() const {
+//     MC res;
+//     for(int a=0; a<NA; a++) res += pi(a)*t[a];
+//     return res;
+//   }
 
-  inline void update_pi( const MC& piM ) {
-    for(int a=0; a<NA; a++) pi(a) = (piM*t[a]).trace().real();
-  }
+//   inline void update_pi( const MC& piM ) {
+//     for(int a=0; a<NA; a++) pi(a) = (piM*t[a]).trace().real();
+//   }
 
-  // void Lmult(const MR& mat) {
-  //   pi = mat*pi;
-  // }
-  // void invert(const MG& mat) {
-  //   const Eigen::PartialPivLU<MG> llt(mat);
-  //   pi = llt.solve(this->pi);
-  // }
+//   // void Lmult(const MR& mat) {
+//   //   pi = mat*pi;
+//   // }
+//   // void invert(const MG& mat) {
+//   //   const Eigen::PartialPivLU<MG> llt(mat);
+//   //   pi = llt.solve(this->pi);
+//   // }
 
-  // inline double operator[](const int i) const { return pi[i]; }
-  // inline double& operator[](const int i) { return pi[i]; }
-  // inline int size() const { return pi.size(); }
+//   // inline double operator[](const int i) const { return pi[i]; }
+//   // inline double& operator[](const int i) { return pi[i]; }
+//   // inline int size() const { return pi.size(); }
 
-  Force& operator+=(const Force& other){
-    pi += other.pi;
-    pi0 += other.pi0;
-    rho += other.rho;
-    rho0 += other.rho0;
-    return *this;
-  }
-  friend Force operator+(Force v, const Force& w) { v += w; return v; }
+//   Force& operator+=(const Force& other){
+//     pi += other.pi;
+//     pi0 += other.pi0;
+//     rho += other.rho;
+//     rho0 += other.rho0;
+//     return *this;
+//   }
+//   friend Force operator+(Force v, const Force& w) { v += w; return v; }
 
-  Force& operator-=(const Force& other){
-    pi -= other.pi;
-    pi0 -= other.pi0;
-    rho -= other.rho;
-    rho0 -= other.rho0;
-    return *this;
-  }
-  friend Force operator-(Force v, const Force& w) { v -= w; return v; }
+//   Force& operator-=(const Force& other){
+//     pi -= other.pi;
+//     pi0 -= other.pi0;
+//     rho -= other.rho;
+//     rho0 -= other.rho0;
+//     return *this;
+//   }
+//   friend Force operator-(Force v, const Force& w) { v -= w; return v; }
 
-  Force& operator*=(const double a){
-    pi *= a;
-    pi0 *= a;
-    rho *= a;
-    rho0 *= a;
-    return *this;
-  }
+//   Force& operator*=(const double a){
+//     pi *= a;
+//     pi0 *= a;
+//     rho *= a;
+//     rho0 *= a;
+//     return *this;
+//   }
 
-  friend Force operator*(const double a, Force v) {
-    v.pi *= a;
-    v.pi0 *= a;
-    v.rho *= a;
-    v.rho0 *= a;
-    return v; }
-  // friend Force operator*(const MG& mat, Force v) { v.pi = mat*v.pi; return v; }
+//   friend Force operator*(const double a, Force v) {
+//     v.pi *= a;
+//     v.pi0 *= a;
+//     v.rho *= a;
+//     v.rho0 *= a;
+//     return v; }
+//   // friend Force operator*(const MG& mat, Force v) { v.pi = mat*v.pi; return v; }
 
-  friend std::ostream& operator<<(std::ostream& os, const Force& v) { os << v.pi; return os; }
-};
+//   friend std::ostream& operator<<(std::ostream& os, const Force& v) { os << v.pi; return os; }
+// };
 
 
 
